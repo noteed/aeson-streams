@@ -3,7 +3,7 @@
 {-# LANGUAGE TupleSections #-}
 module Network.Aeson.Client where
 
-import Data.Aeson
+import Data.Aeson hiding (Result)
 import Data.Attoparsec.ByteString (parseWith, IResult(..))
 import qualified Data.ByteString.Lazy.Char8 as LB
 import qualified Data.ByteString.Char8 as B
@@ -54,11 +54,11 @@ apiPost mbasic base uri parameters body = withOpenSSL $ do
 
 -- | Execute a DELETE agains the specified URI (e.g. `/v1`) using the
 -- supplied parameters.
-apiDelete ::
+apiDelete :: FromJSON a =>
   Maybe (B.ByteString, B.ByteString)
   -> B.ByteString
   -> B.ByteString
-  -> [(B.ByteString, Maybe B.ByteString)] -> IO ()
+  -> [(B.ByteString, Maybe B.ByteString)] -> IO (Result a)
 apiDelete mbasic base uri parameters = withOpenSSL $ do
   let url = B.concat [uri, queryString parameters]
   q <- buildRequest $ do
@@ -69,6 +69,35 @@ apiDelete mbasic base uri parameters = withOpenSSL $ do
   -- debug q
   sendRequest c q emptyBody
   -- TODO assert 204 for upcloud
+
+  r <- receiveResponse c $ \p' i -> do
+    case getStatusCode p' of
+      204 -> return Ok
+      _ -> do
+        x <- Streams.read i
+        let more = Streams.read i >>= return . fromMaybe ""
+        p <- parseWith more json $ fromMaybe "" x
+        case p of
+          Done _ value -> do
+            -- debug value
+            case fromJSON value of
+              Success value' -> do
+                return $ Value value'
+              _ -> return JsonFailure
+          _ -> return ParseFailure
+  closeConnection c
+  return r
+
+data Result a =
+    Ok
+  -- ^ Success and empty result
+  | Value a
+  -- ^ Succes and non-empty result
+  | JsonFailure
+  -- ^ Can't turn JSON into a proper result
+  | ParseFailure
+  -- ^ Can't parse JSON
+  deriving Show
 
 -- | Execute a PUT agains the specified URI using the
 -- supplied parameters.
