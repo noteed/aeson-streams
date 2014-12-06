@@ -9,6 +9,11 @@ license-file:        LICENSE
 author:              Vo Minh Thu
 maintainer:          thu@hypered.io
 build-type:          Simple
+homepage:            https://github.com/noteed/aeson-streams
+
+source-repository head
+  type: git
+  location: git://github.com/noteed/aeson-streams.git
 
 library
   build-depends:       aeson == 0.6.*,
