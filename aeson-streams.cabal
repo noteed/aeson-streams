@@ -16,12 +16,12 @@ source-repository head
   location: git://github.com/noteed/aeson-streams.git
 
 library
-  build-depends:       aeson == 0.6.*,
-                       attoparsec == 0.10.*,
+  build-depends:       aeson,
+                       attoparsec,
                        base == 4.*,
-                       bytestring > 0.9 && < 0.11,
-                       HsOpenSSL == 0.10.*,
-                       http-streams >= 0.7 && <= 0.9,
-                       io-streams == 1.1.*
+                       bytestring,
+                       HsOpenSSL,
+                       http-streams,
+                       io-streams
   exposed-modules:     Network.Aeson.Client
   ghc-options:         -Wall
